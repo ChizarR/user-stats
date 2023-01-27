@@ -14,11 +14,17 @@ import (
 	"unicode"
 )
 
+var apiHost, statusOk = os.LookupEnv("API_HOST")
+
 const (
-	getUserStatsURL = "http://78.24.216.23:5050/users_stats/views/today"
+	getUserStatsURL = "http://%s:5050/users_stats/views/today"
 )
 
 func main() {
+	if !statusOk {
+		panic("Can't find API_HOST in Env")
+	}
+
 	file, err := os.Open("ids.txt")
 	if err != nil {
 		panic(err)
@@ -95,13 +101,14 @@ func NewAnalyzer(client *http.Client) *Analyzer {
 }
 
 func (a *Analyzer) getUserStats(tgId int) (Response, error) {
+	url := fmt.Sprintf(getUserStatsURL, apiHost)
 	bodyBytes, err := json.Marshal(map[string]int{"tg_id": tgId})
 	if err != nil {
 		return Response{}, err
 	}
 	bodyReader := bytes.NewReader(bodyBytes)
 
-	req, err := http.NewRequest(http.MethodGet, getUserStatsURL, bodyReader)
+	req, err := http.NewRequest(http.MethodGet, url, bodyReader)
 	resp, err := a.client.Do(req)
 	if err != nil {
 		return Response{}, err
